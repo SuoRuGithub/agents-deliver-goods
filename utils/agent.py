@@ -39,18 +39,17 @@ class Node():
         if self.total_cost == other.total_cost:
             return self.heuristic < other.heuristic # I don't know why, but it works! without this line, this program will spend a looooooooooooooooooooooong time to run
         else:
-            return self.total_cost < other.total_cost
+            return self.total_cost < other.total_cost   # in fact, this is not true A* algorithm.
     
     def find_neighbours(self, map_matrix, time, constraints, id):
         # traverse all 4 nodes around it, return a list of legal neighbours
-        # I wrote a shit code to complete this function, luckily, ChatGLM help me improved it
+        # I wrote a shit code to complete this function, luckily, ChatGLM helped me improve it
         # ---
         # in STA* algorithm, we should take constraints into account, if all direction are blocked, 
         # we should return current node.
         t_constraint = []
         if constraints: 
             for constraint in constraints:
-                # print(constraint)
                 if constraint[2] == time + 1 and constraint[0] == id:   
                     t_constraint.append(constraint[1])  # t_constraint is a list of position that are forbidden **for this agent at next time t**, like: [(1, 2), ...]
 
@@ -65,9 +64,8 @@ class Node():
             if 0 <= new_x < width \
                 and 0 <= new_y < height \
                 and map_matrix[new_x, new_y] != 1\
-                and (new_x, new_y) not in t_constraint:    # could equal 0, 2, 3
+                and (new_x, new_y) not in t_constraint:
                 neighbours.append(Node((new_x, new_y), self, self.target, time + 1))
-        # neighbours.append(self) # I don't know if it will work
         if neighbours:
             return neighbours
         else:
@@ -83,13 +81,15 @@ def find_next(open_list):
 
 class Agent():
     def __init__(self, game_map: Map, id = 0, seed = 0):  # I add id
-        random.seed(seed)  # for test
+        # random.seed(seed)   # agents shouldn't at same position.
         non_ob_pos = np.argwhere(game_map.map_matrix == 0)
         self.position = tuple(non_ob_pos[random.randint(0, len(non_ob_pos) - 1)])
         self.is_load = False
         self.target = game_map.repo_pos1    # Originally, agent is not loaded and target to repo A
         self.path = None
         self.id = id
+        self.birth_place = self.position
+    
     def update_state(self, game_map):
         '''
         This function change agent's target based on if it is loaded and how much goods left
@@ -99,7 +99,7 @@ class Agent():
         elif game_map.goods_left != 0:
             self.target = game_map.repo_pos1
         elif game_map.goods_left == 0:
-            self.target = self.position    # we suppose, all agent should go to pos1 after the whole process
+            self.target = self.birth_place
 
     def A_star_path_finding(self, game_map, constraints):   # id is the num the this agent
         '''
@@ -107,66 +107,62 @@ class Agent():
         the path is represent as a list of tuple.
 
         notes: in our algorithm, the matrix is dynamic based on the origin matrix and restraince
-        ''' 
-
+        '''
+        # 下面这个似应删掉，我们要保证它完成自己的任务之后仍然可以移动，给别的智能体让路 
+        # 事实证明不可以简单删掉，简单删掉会导致智能体一直在出生地晃悠，应该做的是判断限制条件是否限制了自己这个位置
         if self.position == self.target:
-            self.path = [self.position]    # this may happen when this agent's tasks conclued earlier than others
-            return 
+            flag = 0
+            for constraint in constraints:
+                if constraint[1] == self.position:  # 这个条件也许有点强了
+                    print("test")
+                    flag = 1
+            if flag == 0:
+                self.path = [self.position, self.position, self.position]  # 如果只返回一个会导致一些始料未及的错误，在这里返回长度为二的坐标只是一个权宜之计    # this may happen when this agent's tasks conclued earlier than others
+                return 
 
         open_list = list()
-        # time = 0      # I have a god damn plan
-        open_list.append(Node(self.position, None, self.target, time = -1)) # plus a time dimension 别问我为什么从-1开始，我也不知道，但是不从-1开始就跑不起来
+        open_list.append(Node(self.position, None, self.target, time = -1)) # plus a time dimension. Do not ask me why time starts at -1
         closed_list = list()
         end_node = None
         path = list()
-
-        iter_for_test = 0
-        while end_node == None and len(open_list) != 0 and iter_for_test < 500:
+        while end_node == None and len(open_list) != 0:
+            # print(len(open_list))
             node = find_next(open_list)     # you can easily choose your path-finding algorithm by modifying find_next function
-            # print(node.position)
             open_list.remove(node)
             closed_list.append(node.position)   # we cant append node, that will stuck in infinite loop
             neighbours = node.find_neighbours(game_map.map_matrix, node.time, constraints, self.id)
             for neighbour in neighbours:    # add neighbours to open list
-                
+                # print(neighbour.position)    
                 if neighbour.position == self.target:
                     end_node = neighbour
                     break
-                # if  neighbour not in closed_list:       # what a piece of shit have u written? you should take position as creterion, not the position!
-                # if neighbour.position not in closed_list:
-                
-                    # print("test")
-                open_list.append(neighbour)
-            # time += 1 
-            # print(time)
-
-        # for test
-        if iter_for_test >= 500:
-            print("卡死了")
             
-        
+                # 下面这段很重要，关系到我们的寻路代码是否会变成一个死循环
+                # 基于时空的A*算法和基础的A*算法不一样，因此如果我们不可以说，如果这个位置以前探索过就不再探索了
+                # 但是假如不加任何限制，算法又会重复探索原来探索过的位置，甚至造成死循环
+                # 所以我们要做的是：
+                # - 假如不在open表，就放进去
+                # - 假如在
+                if not any(neighbour.position == node.position for node in open_list):
+                    open_list.append(neighbour)
+                else:
+                    pass # ?
+
+            
         if end_node != None:
             # We can get path by trace back
-            #print(end_node.position)
-            #print(end_node.parent)
             node = end_node
             while node.parent != None:
                 path.append(node.position)
                 node = node.parent      # I forget this shit
-            # path.append(self.position)  # 这样不好，会卡一下
             path.reverse()
         
         if path:
-            self.path = path     # steps是走多少步就走结束了，其实好像就是路径长度?你在想啥？
+            self.path = path
         else:
             self.path = [self.position]
-
-
-
-
-
-
-
+        
+        # print(self.path)
 
 '''
 # for test

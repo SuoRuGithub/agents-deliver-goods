@@ -1,10 +1,7 @@
 #coding=gbk
 '''
-This script defines CentreControl class.
-CentreControl knows everything happening in the field. It knows how much goods left, state of every agent,
-path of every agent.
-CentreControl should assign tasks, find conflicts among every path of each sigle agent, and try to find a solution of 
-the global question.
+This script defines CBS class and CentreControl class.
+CBS class is used for find Partial Solution and CentrControl class is used for find Global Solution
 '''
 from utils.agent import Agent
 # from agent import Agent   # Just in case that you want to test in this file
@@ -23,9 +20,8 @@ Here are three classes:
 - CentreControl: find Global Solution of the question
 '''
 
-# 有一个问题一直解决不了，我重新写一遍
-# 这个Node是什么，Node应该是一个用来计算部分解的东西
-# 我们在使用CBS寻找局部解的时候我们就类似与A*算法一样，从一个open_list里面找一个最小代价的Node
+# class Node is used to find Partial Solution, test collision, generate constraints
+# class CBS maintain a open list of nodes.
 class Node():
     def __init__(self, constraints, agents, game_map):
         self.constraints = constraints
@@ -43,58 +39,68 @@ class Node():
             step = len(path)
             self.solution.append(path)
             steps.append(step)
-        self.cost = self.get_total_cost()
+        for path in self.solution:
+            self.cost += len(path)
 
         min_steps = min(steps)
         self.solution = [path[:min_steps] for path in self.solution]
 
-        self.collision, self.collision_type = self.get_first_collision()
-        # 在这里我们不更新约束，更新约束并进行分叉是CBS的事情
-    def get_total_cost(self):
-        # 这个函数必须在对solution进行截断之前调用，
-        # 我们定义总的代价是solution里所有path的长度之和
-        cost = 0
-        for path in self.solution:
-            cost += len(path)
-        return cost
-    
+        self.collision, self.collision_type = self.get_first_collision()    # type 0: two agents in one positon at a time; type 1: two agent exchange their position
+
     def get_first_collision(self):
-        # 冲突有两种类型，一种就是两条路径在同一时刻重合在同一点了，另一种更复杂一点，也就是两个路径在一个相邻时刻交换了位置，我们先写好第一种测试一下
-        # 冲突应该是这样表示的：(i, j, (x, y), t)
+        '''
+        This function will return the first collision and its collision type
+        collision is represented as (i, j, (x, y), t)
+        collision type 0 represents two agents occuopied the same position at a time, and type 1 represents two agents exchange their position at a time.
+        '''
+        # type 0
         for t in range(len(self.solution[0])):
             for i in range(len(self.solution) - 1):
                 for j in range(i + 1, len(self.solution)):
                     if self.solution[i][t] == self.solution[j][t]:
                         return (i, j, self.solution[i][t], t), 0
-        # 不是哥们，你在初始化的时候还得调用自己类里面的一个函数，这个函数还要返回一个值才能改变自己的属性，你不觉得自己很幽默吗？
-        # 下面这个是一种更困难的collision：
+        
+        # type 1
         # agent1: (x, y) -> (x + 1, y); agent2: (x + 1, y) -> (x, y)
-        # 我们需要返回:(1, (x + 1, y), t + 1)或者(2, (x, y), t + 1)理论上返回任意一种都是可以的
+        # we will return (1, (x + 1, y), t + 1)
         for i in range(len(self.solution) - 1):
             for j in range(i + 1, len(self.solution)):
                 for t in range(len(self.solution[0]) - 1):
                     if self.solution[i][t] == self.solution[j][t + 1] \
                         and self.solution[j][t] == self.solution[i][t + 1]:
-                        return (i, j, self.solution[i][t], t), 1    # 后面如果是1就代表是相向而行了在这里我的意思是,i ,j在t时刻交换了位置
-        # 史山真是越堆越高了，现在已经是头疼医头脚疼医脚了
-        # print(len(self.solution))#我是傻逼
+                        return (i, j, self.solution[i][t], self.solution[j][t], t), 1    # 后面如果是1就代表是相向而行了在这里我的意思是,i ,j在t时刻交换了位置
+        # avoid a special situation, that two agents exchange their position between two Partial Solution
+        # 咱们的路径不是不包括开始的位置吗，所以我们就还得判定目前的位置和开始的第一个位置之间是否有冲突 
+        '''step = len(self.solution[0])
+        for i in range(len(self.solution) - 1):
+            for j in range(i + 1, len(self.solution)):
+                if self.solution[i][step - 1] == self.agents[j].position \
+                    and self.solution[j][step - 1] == self.agents[i].position:
+                    return (i, j, self.solution[i][step - 1], 0), 1'''
+        for i in range(len(self.solution) - 1):
+            for j in range(i + 1, len(self.solution)):
+                if self.agents[i].position == self.solution[j][0] \
+                    and self.agents[j].position == self.solution[i][0]:
+                    #return (i, j, self.solution[i][0], t), 1    # I write solution[i] as solution[j], and spend a week to find this.
+                    return (i, j, self.solution[i][0], self.solution[j][0], t), 1
+
         if self.solution and len(self.solution[0]) == 1:
-            # print("进来了")
             for i in range(len(self.solution) - 1):
                 for j in range(i + 1, len(self.solution)):
                     if self.solution[i][0] == self.agents[j].position \
                         and self.solution[j][0] == self.agents[i].position:
-                        # print("进来了")
-                        return (i, j, self.solution[i][0], 0), 1
+                        # return (i, j, self.solution[i][0], 0), 1
+                        return (i, j, self.solution[i][0], self.solution[j][0], 0), 1
+                    
+
         return None, None
 
     def split(self):
-        # 这个函数将node自己的collision产生一个包含两个约束条件的列表，供CBS生成子节点
         '''
         input: a collision(from function get_collision())
             (i, j, v, t)    # agent i and j at the same vetex at time t
         output: a list of two constraints
-            [(i, v, t), (j, v, t)]
+            [(i, v, t), (j, v, t)] if collision type is 0
         '''
         if self.collision_type == 0:
             # print(self.collision)
@@ -103,9 +109,11 @@ class Node():
                         (self.collision[1], self.collision[2], self.collision[3])]
         elif self.collision_type == 1:
             if self.collision:
-                return [(self.collision[0], self.collision[2], self.collision[3])]  # 我觉得只约束一个可能比较好？    
+                return [(self.collision[0], self.collision[2], self.collision[4]), 
+                        (self.collision[1], self.collision[3], self.collision[4])]  # this piece of shiiiiiiiiiiiiiiiiiiiiiit slow me down a lot. Is coding so hard when people are toung, or always?
+            
     def __lt__(self, other):
-        # 我们在CBS.findnext里要使用这个
+        # CBS.find_next() function will compare two nodes
         return self.cost < other.cost
 
 class CBS():
@@ -118,28 +126,33 @@ class CBS():
         self.open_list = list()
     
     def find_next(self):
+        for node in self.open_list:   # 本意是想返回最优的，但是一则彼此之间代价几乎不可区分，二则这可能导致死循环，所以判断有没有无冲突应该在前
+            if node.collision == None:
+                return node
+
         return min(self.open_list)
 
     def find_partial_solution(self):
         '''
         find a partial solution, move all agents from starts to targets without conflict
         '''
-        self.open_list = [] # 这个其实是重要的, in case you forgot it
+        self.open_list = [] # ?
         root = Node([], self.agents, self.game_map)
         self.open_list.append(root)
-        iter_for_test = 0
-        while len(self.open_list) > 0 and iter_for_test < 500:
-            node = self.find_next() # 获取代价最小的值
+        trick = 0
+        while len(self.open_list) > 0 and trick < 500:
+            print(len(self.open_list))
+            node = self.find_next()
             self.open_list.remove(node)  
-            if not node.collision:  # 如果没有冲突，那们就说明已经找到了
-                #print(node.solution)
-                #time.sleep(8)
+            if not node.collision:  # if no collision, then we have found the solution.
                 return node.solution
             else:
-                constraints_list = node.split() # 获得约束，这个约束应该是两个列表，每个列表都是一套约束，这一套约束由继承父节点和新增约束两部分构成
+                constraints_list = node.split()
                 for constraints in constraints_list:
-                    
+                    # new contraints = constraints from parent node + cnstraint.
                     if node.constraints:
+                        if constraints in node.constraints:
+                            break   # 这是一个头疼医头的做法，避免重复把某些约束放进去，导致死循环
                         new_constraints = copy.deepcopy(node.constraints)
                         new_constraints.append(constraints)
                         new_node = Node(new_constraints, self.agents, self.game_map)
@@ -148,27 +161,23 @@ class CBS():
                         new_constraints = [copy.deepcopy(constraints)]
                         new_node = Node(new_constraints, self.agents, self.game_map)
                         self.open_list.append(new_node)
-                        
-            iter_for_test += 1
-            if iter_for_test > 500:
-                print("卡住了")
-                return node.solution
-            
-        return None
+            trick += 1
+        if trick > 400:
+            print("error")
+            return
+        return [[agent.position] for agent in self.agents]
     
 class CentreControl():
-    def __init__(self, agent_num, goods_num, game_map):
+    def __init__(self, agent_num, game_map):
         '''
         A CentreControl should maintain a list of all agents, maintain a tree to find a solution
         '''
-        self.agents = [Agent(game_map, i, i) for i in range(agent_num)]
+        self.agents = [Agent(game_map, i, i) for i in range(agent_num)] # agents shouldn't at the same position at the beginning.
         # for test
-        for i in range(agent_num):
-            print("agent", i, "position", self.agents[i].position)
-        time.sleep(5)
-        # self.conflicts = None
-        #se"Constraints": [], "Solution": [], Cost}
-        # self.goods_left = goods_num   # this shit I complete in map
+        #for i in range(agent_num):
+        #    print("agent", i, "position", self.agents[i].position)
+        #time.sleep(5)
+    
     def state_update(self, game_map: Map, Partial_Solution):
         '''
         After caculate partial solution, we'll call this function to change states below:
@@ -178,34 +187,47 @@ class CentreControl():
         - goods_left argument of the map
         This function move all agents to the state where the partial solution has taken places, and change their target position at the same time 
         '''
+        if Partial_Solution == None:
+            return
         steps = len(Partial_Solution[0])   # step is the columns of Partial_Solution
         goods_cnt = 0                       # caculate how much goods were taken by agents
         for i, agent in enumerate(self.agents):
             agent.position = Partial_Solution[i][steps - 1] # change current position
-            if agent.position == game_map.repo_pos1:
+            if agent.position == game_map.repo_pos1 and agent.is_load == False:
                 goods_cnt += 1
                 agent.is_load = True    # loading
-            elif agent.position == game_map.repo_pos2:
+            elif agent.position == game_map.repo_pos2 and agent.is_load == True:
                 agent.is_load = False   # unloading
             agent.update_state(game_map)                # change target position
             
         game_map.goods_left -= goods_cnt
+        # this is just a small trick.
+        if game_map.goods_left < 0:
+            game_map.goods_left = 0
+    
     def is_concluded(self, game_map: Map):
         '''
         To analyse if each agent is ready to go home:
         1. goods_left is 0
         2. no agents loading goods now
         '''
+        # a small trick
+        if game_map.goods_left < 0:
+            game_map.goods_left = 0
+
         if game_map.goods_left != 0:
             return False
         for agent in self.agents:
             if agent.is_load == True:
                 return False
+            if agent.position != agent.birth_place:
+                return False
         return True
+    
     def Solution_find(self, game_map: Map): 
         Global_Solution = None
-        iter_for_test = 0
-        while self.is_concluded(game_map) == False:
+        i = 0
+        while self.is_concluded(game_map) == False and i < 10:
             Searcher = CBS(self.agents, game_map)  # when self.agents update, CSB.agents will also update (?)
             Partial_Solution = Searcher.find_partial_solution()    # Caculate partial solution based on current state
             
@@ -216,15 +238,12 @@ class CentreControl():
                 if Partial_Solution:
                     Global_Solution = [x + y for x, y in zip(Global_Solution, Partial_Solution)]
                 else:
-                    break
-            self.state_update(game_map, Partial_Solution) # update all states
-            print("剩余货物: ", game_map.goods_left)
+                    return Global_Solution
+                    pass    # shit code!
+            self.state_update(game_map, Partial_Solution)
+            print("goods left: ", game_map.goods_left)
+            # i += 1
 
-
-            # iter_for_test += 1
-            # if iter_for_test > 20:
-            #     print("出错了")
-            #     break
-        print("最后剩余的货物：", game_map.goods_left)
+        print("GOODS LEFT: ", game_map.goods_left)
 
         return Global_Solution
