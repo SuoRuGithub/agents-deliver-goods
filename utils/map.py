@@ -15,8 +15,7 @@ GOODS_NUM = 40
 
 class Map():
     def __init__(self, map_size, obstacle_ratio, GOODS_NUM):
-        np.random.seed(42)  # for test
-        
+        # np.random.seed(42)  # for test
         map_matrix = np.random.choice([0, 1], size = map_size, p = [1 - obstacle_ratio, obstacle_ratio])
         self.repo_pos1 = tuple(np.random.randint(0, map_size))
         self.repo_pos2 = tuple(np.random.randint(0, map_size))

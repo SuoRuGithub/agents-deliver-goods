@@ -11,9 +11,9 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from matplotlib.colors import ListedColormap
 
-AGENT_NUM = 8
-GOODS_NUM = 30
-MAP_SIZE = (32, 32)
+AGENT_NUM = 4
+GOODS_NUM = 10
+MAP_SIZE = (10, 10)
 OBSTACLE_RATIO = 0.1
 
 colors = [(1, 1, 1), (0, 0, 0), (0.5, 0, 1), (1, 0, 0)] #white, black, purple, red
@@ -35,6 +35,7 @@ def main():
     # plt.show()
     
     Solution = centre_control.Solution_find(map)
+    print("GOODS_LEFT", map.goods_left)
     print("found a solution!")
     print(Solution)
     # Visualization

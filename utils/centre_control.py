@@ -31,7 +31,7 @@ class Node():
         self.solution = []
         self.cost = 0
         self.collision = []
-        
+
         steps = []
         for agent in self.agents:
             agent.A_star_path_finding(self.game_map, constraints)
@@ -82,7 +82,7 @@ class Node():
                 if self.agents[i].position == self.solution[j][0] \
                     and self.agents[j].position == self.solution[i][0]:
                     #return (i, j, self.solution[i][0], t), 1    # I write solution[i] as solution[j], and spend a week to find this.
-                    return (i, j, self.solution[i][0], self.solution[j][0], t), 1
+                    return (i, j, self.solution[i][0], self.solution[j][0], 0), 1   # 这里时间是0，我之前写成t，浪费了很多时间
 
         if self.solution and len(self.solution[0]) == 1:
             for i in range(len(self.solution) - 1):
@@ -104,16 +104,37 @@ class Node():
         '''
         if self.collision_type == 0:
             # print(self.collision)
+            # 现在的问题往往出现在所有货物都运送完毕
             if self.collision:
-                return [(self.collision[0], self.collision[2], self.collision[3]), 
-                        (self.collision[1], self.collision[2], self.collision[3])]
+                magical_trick = np.random.random()
+                print(magical_trick)
+                if magical_trick <= 0.4:
+                    return [(self.collision[0], self.collision[2], self.collision[3])]
+                elif magical_trick <= 0.8:
+                    return [(self.collision[1], self.collision[2], self.collision[3])]
+                elif magical_trick > 0.8:
+                    return [(self.collision[0], self.collision[2], self.collision[3]), 
+                            (self.collision[1], self.collision[2], self.collision[3])] 
+                # return [(self.collision[0], self.collision[2], self.collision[3]), 
+                        # (self.collision[1], self.collision[2], self.collision[3])]
         elif self.collision_type == 1:
             if self.collision:
-                return [(self.collision[0], self.collision[2], self.collision[4]), 
-                        (self.collision[1], self.collision[3], self.collision[4])]  # this piece of shiiiiiiiiiiiiiiiiiiiiiit slow me down a lot. Is coding so hard when people are toung, or always?
+                # 此处我们要加入一个随机性，否则可能陷入循环
+                magical_trick = np.random.random()
+                print(magical_trick)
+                if magical_trick <= 0.4:
+                    return [(self.collision[0], self.collision[2], self.collision[4])]
+                elif magical_trick <= 0.8:
+                    return [(self.collision[1], self.collision[3], self.collision[4])]
+                elif magical_trick > 0.8:
+                    return [(self.collision[0], self.collision[2], self.collision[4]), 
+                            (self.collision[1], self.collision[3], self.collision[4])]  # this piece of shiiiiiiiiiiiiiiiiiiiiiit slow me down a lot. Is coding so hard when people are toung, or always?
             
     def __lt__(self, other):
         # CBS.find_next() function will compare two nodes
+        # 实际操作中我发现这样做很可能会导致死循环，因为cost似乎是差不多的……
+        # 如果两个cost不同，就返回cost小的那一个，但是如果两者cost相同，我们返回先被放进去的那一个，也就是说，在遍历约束树的时候，我们要尽可能保证是层序地遍历的，否则可能会在一个分支陷入太深
+        # 这部分内容需要在CBS的find_next方法里面实现
         return self.cost < other.cost
 
 class CBS():
@@ -126,11 +147,29 @@ class CBS():
         self.open_list = list()
     
     def find_next(self):
-        for node in self.open_list:   # 本意是想返回最优的，但是一则彼此之间代价几乎不可区分，二则这可能导致死循环，所以判断有没有无冲突应该在前
-            if node.collision == None:
-                return node
-
-        return min(self.open_list)
+        # for node in self.open_list:   # 本意是想返回最优的，但是一则彼此之间代价几乎不可区分，二则这可能导致死循环，所以判断有没有无冲突应该在前
+            # if node.collision == None:
+                # return node
+        # 最开始我只用cost比较，发现死循环，后来加入collision判断，也会死循环（因为彼此各退一步肯定是没有冲突的，但是再进一步就回到了原点）
+        # 现在我打算优先判断cost，然后判断它们在约束树中的深度，尽可能做到层序遍历
+        min_node = None
+        min_idx = -1 
+        min_cost = int(25536)
+        for idx, node in enumerate(self.open_list):
+            if node.cost < min_cost:
+                min_node = node
+                min_idx = idx
+                min_cost = node.cost
+            elif node.cost == min_cost:
+                print("test")
+                if idx < min_idx:
+                    min_node = node
+                    min_idx = idx
+                    min_cost = node.cost
+            else:
+                pass 
+        # return min(self.open_list)
+        return min_node
 
     def find_partial_solution(self):
         '''
@@ -140,9 +179,11 @@ class CBS():
         root = Node([], self.agents, self.game_map)
         self.open_list.append(root)
         trick = 0
-        while len(self.open_list) > 0 and trick < 500:
+        while len(self.open_list) > 0 and trick < 400:
             print(len(self.open_list))
             node = self.find_next()
+            # for test
+            solution = node.solution
             self.open_list.remove(node)  
             if not node.collision:  # if no collision, then we have found the solution.
                 return node.solution
@@ -164,7 +205,6 @@ class CBS():
             trick += 1
         if trick > 400:
             print("error")
-            return
         return [[agent.position] for agent in self.agents]
     
 class CentreControl():

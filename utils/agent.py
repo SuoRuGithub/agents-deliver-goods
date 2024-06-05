@@ -81,7 +81,7 @@ def find_next(open_list):
 
 class Agent():
     def __init__(self, game_map: Map, id = 0, seed = 0):  # I add id
-        # random.seed(seed)   # agents shouldn't at same position.
+        random.seed(seed)   # agents shouldn't at same position.
         non_ob_pos = np.argwhere(game_map.map_matrix == 0)
         self.position = tuple(non_ob_pos[random.randint(0, len(non_ob_pos) - 1)])
         self.is_load = False
@@ -112,8 +112,9 @@ class Agent():
         # 事实证明不可以简单删掉，简单删掉会导致智能体一直在出生地晃悠，应该做的是判断限制条件是否限制了自己这个位置
         if self.position == self.target:
             flag = 0
+            # 下面的代码是干什么的我忘了……
             for constraint in constraints:
-                if constraint[1] == self.position:  # 这个条件也许有点强了
+                if constraint[0] == self.position:  # 这个条件也许有点强了
                     print("test")
                     flag = 1
             if flag == 0:
