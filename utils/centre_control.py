@@ -301,7 +301,7 @@ class CentreControl():
                     pass    # shit code!
             self.state_update(game_map, Partial_Solution)
             print("goods left: ", game_map.goods_left)
-            # i += 1
+            i += 1
 
         print("GOODS LEFT: ", game_map.goods_left)
 

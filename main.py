@@ -11,10 +11,10 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation, writers
 from matplotlib.colors import ListedColormap
 
-AGENT_NUM = 20
-GOODS_NUM = 200
-MAP_SIZE = (128, 128)
-OBSTACLE_RATIO = 0.2
+AGENT_NUM = 4
+GOODS_NUM = 10
+MAP_SIZE = (10, 10)
+OBSTACLE_RATIO = 0.1
 
 colors = [(1, 1, 1), (0, 0, 0), (0.5, 0, 1), (1, 0, 0)] #white, black, purple, red
 my_cmap = ListedColormap(colors)
