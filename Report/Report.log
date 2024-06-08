@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999995 (TeX Live 2023) (preloaded format=xelatex 2024.3.3)  1 JUN 2024 12:24
+This is XeTeX, Version 3.141592653-2.6-0.999995 (TeX Live 2023) (preloaded format=xelatex 2024.3.3)  8 JUN 2024 14:49
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -647,8 +647,20 @@ Package: booktabs 2020/01/12 v1.61803398 Publication quality tables
 \@thisruleclass=\count351
 \@lastruleclass=\count352
 \@thisrulewidth=\dimen308
+) (./Report.aux
+
+LaTeX Warning: Label `figure1' multiply defined.
+
+
+LaTeX Warning: Label `figure1' multiply defined.
+
+
+LaTeX Warning: Label `alg:example' multiply defined.
+
+
+LaTeX Warning: Label `alg:example' multiply defined.
+
 )
-No file Report.aux.
 \openout1 = `Report.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 40.
@@ -728,11 +740,10 @@ LaTeX Font Info:    Overwriting math alphabet `\mathsf' in version `bold'
 LaTeX Font Info:    Overwriting math alphabet `\mathtt' in version `bold'
 (Font)                  OT1/cmtt/m/n --> TU/lmtt/b/n on input line 40.
 Package hyperref Info: Link coloring ON on input line 40.
+ (./Report.out) (./Report.out)
 \@outlinefile=\write3
 \openout3 = `Report.out'.
 
-
-Package hyperref Warning: Rerun to get /PageLabels entry.
 
 *geometry* driver: auto-detecting
 *geometry* detected driver: xetex
@@ -828,21 +839,21 @@ Package fontspec Info: Font family 'SimSun(1)' created for font 'SimSun' with
 
 [1
 
-]
-No file Report.toc.
+] (./Report.toc
+
+LaTeX Font Warning: Font shape `OMX/cmex/m/n' in size <10.53937> not available
+(Font)              size <10.95> substituted on input line 4.
+
+)
 \tf@toc=\write4
 \openout4 = `Report.toc'.
 
-[1]
-
-LaTeX Font Warning: Font shape `OMX/cmex/m/n' in size <10.53937> not available
-(Font)              size <10.95> substituted on input line 76.
-
+ [1]
 File: fig1.png Graphic file (type bmp)
 <fig1.png>
 File: fig2.png Graphic file (type bmp)
 <fig2.png>
-[2]
+ [2]
 
 LaTeX Font Warning: Font shape `TU/SimSun(0)/b/it' undefined
 (Font)              using `TU/SimSun(0)/b/n' instead on input line 108.
@@ -860,23 +871,17 @@ LaTeX Font Warning: Size substitutions with differences
 LaTeX Font Warning: Some font shapes were not available, defaults substituted.
 
 
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+LaTeX Warning: There were multiply-defined labels.
 
-
-Package rerunfilecheck Warning: File `Report.out' has changed.
-(rerunfilecheck)                Rerun to get outlines right
-(rerunfilecheck)                or use package `bookmark'.
-
-Package rerunfilecheck Info: Checksums for `Report.out':
-(rerunfilecheck)             Before: <no file>
-(rerunfilecheck)             After:  859467CE22EDAF39502476EBDCF07692;826.
+Package rerunfilecheck Info: File `Report.out' has not changed.
+(rerunfilecheck)             Checksum: 859467CE22EDAF39502476EBDCF07692;826.
  ) 
 Here is how much of TeX's memory you used:
- 20490 strings out of 476683
- 433855 string characters out of 5805812
+ 20548 strings out of 476683
+ 437057 string characters out of 5805812
  1867012 words of memory out of 5000000
- 40411 multiletter control sequences out of 15000+600000
- 521895 words of font info for 101 fonts, out of 8000000 for 9000
+ 40460 multiletter control sequences out of 15000+600000
+ 521903 words of font info for 102 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
  89i,6n,97p,512b,890s stack positions out of 10000i,1000n,20000p,200000b,200000s
 

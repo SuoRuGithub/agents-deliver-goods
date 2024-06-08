@@ -8,13 +8,13 @@ from utils.agent import Agent
 from utils.centre_control import CentreControl
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
+from matplotlib.animation import FuncAnimation, writers
 from matplotlib.colors import ListedColormap
 
-AGENT_NUM = 4
-GOODS_NUM = 10
-MAP_SIZE = (10, 10)
-OBSTACLE_RATIO = 0.1
+AGENT_NUM = 20
+GOODS_NUM = 200
+MAP_SIZE = (128, 128)
+OBSTACLE_RATIO = 0.2
 
 colors = [(1, 1, 1), (0, 0, 0), (0.5, 0, 1), (1, 0, 0)] #white, black, purple, red
 my_cmap = ListedColormap(colors)
@@ -41,7 +41,7 @@ def main():
     # Visualization
     fig, ax = plt.subplots()
     im = ax.imshow(map.map_matrix, cmap = my_cmap)
-    scatters = [ax.plot([], [], 'o', markersize = 3)[0] for _ in range(AGENT_NUM)]
+    scatters = [ax.plot([], [], 'o', markersize = 1)[0] for _ in range(AGENT_NUM)]
     def init():
         ax.set_xlim(-0.5, MAP_SIZE[0] - 0.5)
         ax.set_ylim(-0.5, MAP_SIZE[1] - 0.5)
@@ -59,6 +59,12 @@ def main():
     visualizer = FuncAnimation(fig, update, frames = 10 * (len(Solution[0]) - 1), init_func = init, interval = 2, blit = True)
     plt.show()
     visualizer.save('demo.gif', writer = 'ffmpeg')
+
+    FFMpegWriter = writers['ffmpeg']
+    writer = FFMpegWriter(fps=60, metadata=dict(title='demo video', artist='zzpku', comment="hope this work"), bitrate=1800)
+    visualizer.save('demo.mp4', writer=writer)
+
+
 
 if __name__ == "__main__":
     main()

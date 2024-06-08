@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import time
 import copy
+import random
 
 '''
 Here are three classes:
@@ -152,24 +153,27 @@ class CBS():
                 # return node
         # 最开始我只用cost比较，发现死循环，后来加入collision判断，也会死循环（因为彼此各退一步肯定是没有冲突的，但是再进一步就回到了原点）
         # 现在我打算优先判断cost，然后判断它们在约束树中的深度，尽可能做到层序遍历
-        min_node = None
-        min_idx = -1 
-        min_cost = int(25536)
-        for idx, node in enumerate(self.open_list):
-            if node.cost < min_cost:
-                min_node = node
-                min_idx = idx
-                min_cost = node.cost
-            elif node.cost == min_cost:
-                print("test")
-                if idx < min_idx:
-                    min_node = node
-                    min_idx = idx
-                    min_cost = node.cost
-            else:
-                pass 
+        # min_node = None
+        # min_idx = -1 
+        # min_cost = int(25536)
+        # for idx, node in enumerate(self.open_list):
+            # if node.cost < min_cost:
+                # min_node = node
+                # min_idx = idx
+                # min_cost = node.cost
+            # elif node.cost == min_cost:
+                # print("test")
+                # if idx < min_idx:
+                    # min_node = node
+                    # min_idx = idx
+                    # min_cost = node.cost
+            # else:
+                # pass 
         # return min(self.open_list)
-        return min_node
+
+        # 试了各种方法，都不能解决死循环的问题，因此这里想直接随机选取
+        node = random.choice(self.open_list)        # 成功解决了
+        return node
 
     def find_partial_solution(self):
         '''
@@ -179,11 +183,14 @@ class CBS():
         root = Node([], self.agents, self.game_map)
         self.open_list.append(root)
         trick = 0
+
         while len(self.open_list) > 0 and trick < 400:
             print(len(self.open_list))
             node = self.find_next()
             # for test
+            
             solution = node.solution
+            # test end
             self.open_list.remove(node)  
             if not node.collision:  # if no collision, then we have found the solution.
                 return node.solution
@@ -202,6 +209,7 @@ class CBS():
                         new_constraints = [copy.deepcopy(constraints)]
                         new_node = Node(new_constraints, self.agents, self.game_map)
                         self.open_list.append(new_node)
+            
             trick += 1
         if trick > 400:
             print("error")
@@ -267,7 +275,18 @@ class CentreControl():
     def Solution_find(self, game_map: Map): 
         Global_Solution = None
         i = 0
-        while self.is_concluded(game_map) == False and i < 10:
+
+        trick = 0
+        goods_left = game_map.goods_left
+        while self.is_concluded(game_map) == False and i < 50:
+            # for test
+            if goods_left == game_map.goods_left:
+                trick += 1
+            else:
+                trick = 0
+                goods_left = game_map.goods_left
+            # test end
+            
             Searcher = CBS(self.agents, game_map)  # when self.agents update, CSB.agents will also update (?)
             Partial_Solution = Searcher.find_partial_solution()    # Caculate partial solution based on current state
             
